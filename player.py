@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import datetime
 import os, sys
 from Tkinter import Tk, Button, Frame, Label, Listbox, SINGLE, END, Y, Scrollbar, VERTICAL, RIGHT, LEFT, BOTH
 from tkSnack import Sound, initializeSnack
@@ -9,62 +8,6 @@ from tkSnack import Sound, initializeSnack
 
 root = Tk()
 initializeSnack(root)
-
-
-class Song(object):
-    u"""
-    Класс для работы с песенками
-    """
-
-    __stop_time = 15  # seconds
-    __started_at = 0
-    __stop_flag = False
-
-    def __init__(self, _timer):
-        self.timer = _timer
-
-    sound = Sound()
-
-    def __check_limit(self):
-        if not self.__stop_flag:
-
-            if self.__stop_time < self.__started_at:
-                self.stop()
-                self.__stop_flag = True
-                return
-
-            self.__started_at += 1
-            root.after(1000, self.__check_limit)
-
-    def play(self):
-        self.stop()
-        self.sound.play()
-        self.timer.start()
-        self.__stop_flag = False
-        self.__check_limit()
-
-    def stop(self):
-        self.__stop_flag = True
-        self.__started_at = 0
-        self.sound.stop()
-        self.timer.stop()
-
-    def pause(self):
-        self.sound.pause()
-        self.timer.pause()
-
-        if not self.__stop_flag:
-            self.__stop_flag = True
-
-        else:
-            self.__stop_flag = False
-            self.__check_limit()
-
-    def load(self, filename):
-        self.sound.load(filename)
-
-    def set_stop_time(self, stop_time_value):
-        self.__stop_time = stop_time_value
 
 
 class PlayList():
@@ -77,7 +20,7 @@ class PlayList():
         self.__scroll_bar.pack(side=RIGHT, fill=Y)
         self.__lb.pack(side=LEFT, fill=BOTH, expand=1)
 
-        self.songs_list = os.listdir(self.dir)
+        self.songs_list = filter(lambda x: x.endswith('.mp3'), os.listdir(self.dir))
         for song in self.songs_list:
             self.__lb.insert(END, song)
 
@@ -86,55 +29,94 @@ class PlayList():
     @property
     def selected(self):
         try:
-            return self.songs_list[self.__lb.curselection()[0]]
+            return self.songs_list[int(self.__lb.curselection()[0])]
         except IndexError:
             return None
 
 
 class Timer(Label):
 
-    __started = None
-    __id = None
+    __limit = 0
+    __started = 0
     __paused = False
+    song = None
 
-    def __init__(self, frame):
-        Label.__init__(self, frame, text='00:00', padx=15)
+    def __init__(self, frame, limit):
+        Label.__init__(self, frame, padx=15)
+        self.__reset()
         self.pack(side='right')
+        self.__limit = limit
 
-    def __update(self):
+    def __update_view(self):
+        u"""
+        Обновить таймер на экране
+        """
+
         add_zero = lambda x: '0' + str(x) if x < 10 else str(x)
 
         minutes = int(self.__started/60)
         view = add_zero(minutes) + ':' + add_zero(int(self.__started - minutes*60))
         self.config(text=view)
-        self.__started += 1
-
-        self.__id = root.after(1000, self.__update)
 
     def __reset(self):
+        u"""
+        Обнулить таймер
+        """
+
         self.config(text='00:00')
-        self.__started = None
+        self.__started = 0
+        self.__paused = False
+
+    def __exit(self):
+        u"""
+        Проверка таймера на выполнение следующих условий
+        1.Окончание отсчетного времени
+        2.Пауза
+        """
+
+        if not self.__paused and self.__check_time():
+
+            self.__started += 1
+            self.__update_view()
+            root.after(1000, self.__exit)
+
+        elif not self.__check_time():
+            self.stop()
+
+    #todo надо написать функцию которая будет вызывать отложеный запуск
+
+    def __check_time(self):
+        return self.__limit > self.__started
 
     def start(self):
+        u"""
+        Запустить таймер
+        """
+
         self.__reset()
-        self.__started = 0
-        self.__update()
+        self.song.play()
+        self.__exit()
 
     def stop(self):
-        self.__reset()
-        root.after_cancel(self.__id) if self.__id else None
-        self.__id = None
+        u"""
+        Остановить таймер
+        """
+
+        self.song.stop()
 
     def pause(self):
-        if self.__started:
-            if not self.__paused:
-                root.after_cancel(self.__id)
-                self.__id = None
-                self.__paused = True
+        u"""
+        Поставить на паузу
+        """
 
-            else:
-                root.after(1000, self.__update)
-                self.__paused = False
+        if self.__paused:
+            self.__paused = False
+            root.after(1000, self.__exit())
+
+        else:
+            self.__paused = True
+
+        self.song.pause()
 
 Frame(root).pack(pady=5)
 song_label = Label(root, text='No song loaded', font='Helvetica 11 bold')
@@ -145,9 +127,11 @@ f1 = Frame(root)
 f0.pack(pady=5)
 f1.pack(pady=5)
 
-timer = Timer(f0)
-song = Song(timer)
-play_list = PlayList(f1, u'D:\\Da3x\\Music\\хастл')
+song = Sound()
+timer = Timer(f0, 10)
+timer.song = song
+
+play_list = PlayList(f1, u'D:\\Music\\Хастл')
 
 
 def play():
@@ -157,15 +141,15 @@ def play():
     if filename:
         song_label.config(text=play_list.selected)
         song.load(filename)
-        song.play()
+        timer.start()
 
 
 def stop():
-    song.stop()
+    timer.stop()
 
 
 def pause():
-    song.pause()
+    timer.pause()
 
 
 Button(f0, bitmap='snackPlay', command=play, height=50, width=50).pack(side='left')
