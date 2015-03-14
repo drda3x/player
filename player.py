@@ -1,6 +1,8 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+#todo СТОП-ПАУЗА ... Таймер скачет
+
 import os, sys
 from Tkinter import Tk, Button, Frame, Label, Listbox, SINGLE, END, Y, Scrollbar, VERTICAL, RIGHT, LEFT, BOTH
 from tkSnack import Sound, initializeSnack
@@ -39,6 +41,7 @@ class Timer(Label):
     __limit = 0
     __started = 0
     __paused = False
+    __id = None
     song = None
 
     def __init__(self, frame, limit):
@@ -63,6 +66,7 @@ class Timer(Label):
         Обнулить таймер
         """
 
+        self.__unset()
         self.config(text='00:00')
         self.__started = 0
         self.__paused = False
@@ -78,15 +82,19 @@ class Timer(Label):
 
             self.__started += 1
             self.__update_view()
-            root.after(1000, self.__exit)
+            self.__set()
 
         elif not self.__check_time():
             self.stop()
 
-    #todo надо написать функцию которая будет вызывать отложеный запуск
-
     def __check_time(self):
         return self.__limit > self.__started
+
+    def __set(self):
+        self.__id = root.after(1000, self.__exit)
+
+    def __unset(self):
+        root.after_cancel(self.__id) if self.__id else None
 
     def start(self):
         u"""
@@ -95,7 +103,7 @@ class Timer(Label):
 
         self.__reset()
         self.song.play()
-        self.__exit()
+        self.__set()
 
     def stop(self):
         u"""
@@ -103,6 +111,7 @@ class Timer(Label):
         """
 
         self.song.stop()
+        self.__unset()
 
     def pause(self):
         u"""
@@ -111,7 +120,7 @@ class Timer(Label):
 
         if self.__paused:
             self.__paused = False
-            root.after(1000, self.__exit())
+            self.__set()
 
         else:
             self.__paused = True
@@ -128,7 +137,7 @@ f0.pack(pady=5)
 f1.pack(pady=5)
 
 song = Sound()
-timer = Timer(f0, 10)
+timer = Timer(f0, 30)
 timer.song = song
 
 play_list = PlayList(f1, u'D:\\Music\\Хастл')
