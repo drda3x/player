@@ -17,6 +17,7 @@ timer_val = 90
 
 # =================================================================
 
+
 class PlayList():
 
     def __init__(self, frame, path):
@@ -28,6 +29,12 @@ class PlayList():
         self.__lb.pack(side=LEFT, fill=BOTH, expand=1)
 
         self.songs_list = filter(lambda x: x.endswith('.mp3'), os.listdir(self.dir))
+
+        try:
+            self.songs_list.sort(key=lambda x: x.split(' - ')[0])
+        except Exception:
+            pass
+
         for song in self.songs_list:
             self.__lb.insert(END, song)
 
