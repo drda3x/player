@@ -3,13 +3,12 @@
 
 #todo СТОП-ПАУЗА ... Таймер скачет
 
-import os, sys
+import os, sys, tkSnack
 from Tkinter import Tk, Button, Frame, Label, Listbox, SINGLE, END, Y, Scrollbar, VERTICAL, RIGHT, LEFT, BOTH
-from tkSnack import Sound, initializeSnack
 
 
 root = Tk()
-initializeSnack(root)
+tkSnack.initializeSnack(root)
 
 
 class PlayList():
@@ -80,12 +79,18 @@ class Timer(Label):
 
         if not self.__paused and self.__check_time():
 
+            if self.__time_left() <= self.song.fade_out_dur:
+                self.song.fade_out()
+
             self.__started += 1
             self.__update_view()
             self.__set()
 
         elif not self.__check_time():
             self.stop()
+
+    def __time_left(self):
+        return self.__limit - self.__started
 
     def __check_time(self):
         return self.__limit > self.__started
@@ -127,6 +132,49 @@ class Timer(Label):
 
         self.song.pause()
 
+
+class Song(tkSnack.Sound):
+
+    __volume_level = 100
+    __started = False
+    fade_out_dur = 4
+
+    def __init__(self):
+        tkSnack.Sound.__init__(self)
+        tkSnack.audio.play_gain(100)
+
+    def __get_params(self):
+        time_int = self.fade_out_dur * 1000 / 200
+
+        return {
+            'time': 200,
+            'level': 100 / time_int
+        }
+
+    def fade_out(self):
+
+        if not self.__started:
+
+            def action():
+                params = self.__get_params()
+                self.__volume_level -= params['level']
+                tkSnack.audio.play_gain(self.__volume_level)
+
+                if self.__volume_level >= 0:
+                    self.__started = True
+                    root.after(params['time'], action)
+
+                else:
+                    self.__started = False
+                    self.reset_volume()
+
+            action()
+
+    def reset_volume(self):
+        self.__volume_level = 100
+        tkSnack.audio.play_gain(self.__volume_level)
+
+
 Frame(root).pack(pady=5)
 song_label = Label(root, text='No song loaded', font='Helvetica 11 bold')
 song_label.pack()
@@ -136,8 +184,8 @@ f1 = Frame(root)
 f0.pack(pady=5)
 f1.pack(pady=5)
 
-song = Sound()
-timer = Timer(f0, 30)
+song = Song()
+timer = Timer(f0, 90)
 timer.song = song
 
 play_list = PlayList(f1, u'D:\\Music\\Хастл')
