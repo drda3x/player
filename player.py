@@ -10,6 +10,12 @@ from Tkinter import Tk, Button, Frame, Label, Listbox, SINGLE, END, Y, Scrollbar
 root = Tk()
 tkSnack.initializeSnack(root)
 
+# =================================================================
+
+folder = 'C:\\music'
+timer_val = 90
+
+# =================================================================
 
 class PlayList():
 
@@ -185,10 +191,10 @@ f0.pack(pady=5)
 f1.pack(pady=5)
 
 song = Song()
-timer = Timer(f0, 90)
+timer = Timer(f0, timer_val)
 timer.song = song
 
-play_list = PlayList(f1, u'D:\\Music\\Хастл')
+play_list = PlayList(f1, folder)
 
 
 def play():
@@ -196,8 +202,9 @@ def play():
     filename = play_list.dir + '\\' + play_list.selected if play_list.selected else None
 
     if filename:
-        song_label.config(text=play_list.selected)
+        song_label.config(text=u'Загрузка...')
         song.load(filename)
+        song_label.config(text=play_list.selected)
         timer.start()
 
 
