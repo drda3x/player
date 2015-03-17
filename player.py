@@ -4,7 +4,7 @@
 #todo СТОП-ПАУЗА ... Таймер скачет
 
 import os, sys, tkSnack
-from Tkinter import Tk, Button, Frame, Label, Listbox, SINGLE, END, Y, Scrollbar, VERTICAL, RIGHT, LEFT, BOTH
+from Tkinter import *
 
 
 root = Tk()
@@ -12,8 +12,7 @@ tkSnack.initializeSnack(root)
 
 # =================================================================
 
-folder = 'C:\\music'
-timer_val = 90
+folder = u'D:\\Music\\Хастл'
 
 # =================================================================
 
@@ -50,17 +49,44 @@ class PlayList():
 
 class Timer(Label):
 
+    limit = IntVar()
     __limit = 0
     __started = 0
     __paused = False
     __id = None
     song = None
 
-    def __init__(self, frame, limit):
+    def __init__(self, frame):
+
+        def timer_values(start_val, stop_val, step):
+            get_secs = lambda x: x[0]*60 + x[1]
+            add_zero = lambda x: '0%d' % x if x < 10 else str(x)
+            start = map(int, start_val.split(':'))
+            stop = map(int, stop_val.split(':'))
+
+            if get_secs(start) - step <= 60 and start[0] > 0:
+                start[0] -= 1
+                start[1] = 60 - step
+
+            for i in ['full'] + range(get_secs(start), get_secs(stop), step):
+
+                if isinstance(i, int):
+                    start[1] += step
+                    if start[1] >= 60:
+                        start[0] += 1
+                        start[1] -= 60
+
+                    yield ('%d:%s' % (start[0], add_zero(start[1])), get_secs(start))
+
+                else:
+                    yield ('full', None)
+
         Label.__init__(self, frame, padx=15)
         self.__reset()
         self.pack(side='right')
-        self.__limit = limit
+
+        for i in timer_values('1:00', '2:00', 15):
+            Radiobutton(f3, variable=self.limit, indicatoron=0, text=i[0], value=i[1], padx=5, pady=5).pack(side='left', padx=5)
 
     def __update_view(self):
         u"""
@@ -118,6 +144,11 @@ class Timer(Label):
         u"""
         Запустить таймер
         """
+
+        try:
+            self.__limit = self.limit.get()
+        except ValueError:
+            self.__limit = self.song.length(unit='seconds')
 
         self.__reset()
         self.song.play()
@@ -194,11 +225,13 @@ song_label.pack()
 
 f0 = Frame(root)
 f1 = Frame(root)
+f3 = Frame(f0)
 f0.pack(pady=5)
 f1.pack(pady=5)
+f3.pack(side='left', padx=30)
 
 song = Song()
-timer = Timer(f0, timer_val)
+timer = Timer(f0)
 timer.song = song
 
 play_list = PlayList(f1, folder)
@@ -221,7 +254,6 @@ def stop():
 
 def pause():
     timer.pause()
-
 
 Button(f0, bitmap='snackPlay', command=play, height=50, width=50).pack(side='left')
 Button(f0, bitmap='snackStop', command=stop, height=50, width=50).pack(side='left')
