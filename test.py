@@ -28,12 +28,12 @@ def play():
     def next():
         if is_playing:
             player.next()
-            _id[0] = root.after(1, next)
+            _id[0] = root.after(0, next)
 
         else:
             root.after_cancel(_id[0])
 
-    _id[0] = root.after(1, next)
+    _id[0] = root.after(0, next)
 
 
 def stop():
