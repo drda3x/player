@@ -75,7 +75,10 @@ class Sound(object):
             time.sleep(.05)
 
     def pause(self):
-        pass
+        self.__sound.pause()
+
+    def unpause(self):
+        self.__sound.unpause()
 
     def stop(self):
         self.__sound.stop()
