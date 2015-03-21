@@ -1,0 +1,11 @@
+import pymedia.audio.sound as sound, time
+
+	snd1 = sound.Output(44100, 2, sound.AFMT_S16_LE )
+
+	f = open( u'D:\\Da3x\\Music\\хастлm\\Duffy -  Mercy.mp3', 'rb' )
+	s = ' '
+	
+	while len( s )> 0:
+		s= f.read( 4000000 )
+		while 1:
+			snd1.play( s )
