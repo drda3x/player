@@ -3,16 +3,16 @@
 
 #todo СТОП-ПАУЗА ... Таймер скачет
 
-import os, sys, tkSnack
+import os, sys
 from Tkinter import *
+from Sound import SoundManager as Sound
 
 
 root = Tk()
-tkSnack.initializeSnack(root)
 
 # =================================================================
 
-folder = u'D:\\Music\\Хастл'
+folder = u'D:\\Music'
 
 # =================================================================
 
@@ -177,15 +177,14 @@ class Timer(Label):
         self.song.pause()
 
 
-class Song(tkSnack.Sound):
+class Song(Sound):
 
     __volume_level = 100
     __started = False
     fade_out_dur = 4
 
-    def __init__(self):
-        tkSnack.Sound.__init__(self)
-        tkSnack.audio.play_gain(100)
+    def __init__(self, master):
+        super(Song, self).__init__(master)
 
     def __get_params(self):
         time_int = self.fade_out_dur * 1000 / 200
@@ -202,7 +201,7 @@ class Song(tkSnack.Sound):
             def action():
                 params = self.__get_params()
                 self.__volume_level -= params['level']
-                tkSnack.audio.play_gain(self.__volume_level)
+                self.volume(self.__volume_level)
 
                 if self.__volume_level >= 0:
                     self.__started = True
@@ -216,7 +215,7 @@ class Song(tkSnack.Sound):
 
     def reset_volume(self):
         self.__volume_level = 100
-        tkSnack.audio.play_gain(self.__volume_level)
+        self.volume(self.__volume_level)
 
 
 Frame(root).pack(pady=5)
@@ -230,7 +229,7 @@ f0.pack(pady=5)
 f1.pack(pady=5)
 f3.pack(side='left', padx=30)
 
-song = Song()
+song = Song(root)
 timer = Timer(f0)
 timer.song = song
 
@@ -255,8 +254,8 @@ def stop():
 def pause():
     timer.pause()
 
-Button(f0, bitmap='snackPlay', command=play, height=50, width=50).pack(side='left')
-Button(f0, bitmap='snackStop', command=stop, height=50, width=50).pack(side='left')
-Button(f0, bitmap='snackPause', command=pause, height=50, width=50).pack(side='left')
+Button(f0, text='play', command=play, height=5, width=5).pack(side='left')
+Button(f0, text='stop', command=stop, height=5, width=5).pack(side='left')
+Button(f0, text='pause', command=pause, height=5, width=5).pack(side='left')
 
 root.mainloop()

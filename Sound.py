@@ -102,6 +102,9 @@ class Sound(object):
         self.__demuxer = muxer.Demuxer(file_path.split('.')[-1].lower())
         self.__sound_file = file(file_path, 'rb')
 
+    def volume(self, value):
+        self.__sound.setVolume(value)
+
 
 class SoundManager(object):
 
@@ -109,6 +112,9 @@ class SoundManager(object):
     main_stream = None
     __play_id = None
     __status = None
+    __fade_out_status = False
+    __volume_level = 65535
+    fade_out_dur = 4
 
     PLAY_STATUS = 'play'
     STOP_STATUS = 'stop'
@@ -119,10 +125,11 @@ class SoundManager(object):
 
     def play(self):
 
-        self.__stop_flag = self.PLAY_STATUS
+        self.__status = self.PLAY_STATUS
 
         def loop():
-            if self.__stop_flag == self.PLAY_STATUS:
+
+            if self.__status == self.PLAY_STATUS:
                 self.sound.play()
                 self.__play_id = self.main_stream.after(1, loop)
             else:
@@ -131,14 +138,18 @@ class SoundManager(object):
         self.__play_id = self.main_stream.after(1, loop)
 
     def stop(self):
-        self.__stop_flag = self.STOP_STATUS
-        self.sound.stop()
+        try:
+            self.sound.stop()
+            self.__status = self.STOP_STATUS
+
+        except Exception:
+            pass
 
     def pause(self):
-        if self.__stop_flag != self.STOP_STATUS:
+        if self.__status != self.STOP_STATUS:
 
-            if self.__stop_flag == self.PLAY_STATUS:
-                self.__stop_flag = True
+            if self.__status == self.PLAY_STATUS:
+                self.__status = self.PAUSE_STATUS
                 self.sound.pause()
 
             else:
@@ -146,3 +157,34 @@ class SoundManager(object):
 
     def load(self, file_name):
         self.sound.load(file_name)
+
+    def __get_fade_out_params(self):
+        time_int = self.fade_out_dur * 1000 / 200
+
+        return {
+            'time': 200,
+            'level': 65535 / time_int
+        }
+
+    def fade_out(self):
+
+        if not self.__fade_out_status:
+
+            def action():
+                params = self.__get_fade_out_params()
+                self.__volume_level -= params['level']
+                self.sound.volume(self.__volume_level)
+
+                if self.__volume_level >= 0:
+                    self.__started = True
+                    self.main_stream.after(params['time'], action)
+
+                else:
+                    self.__started = False
+                    self.reset_volume()
+
+            action()
+
+    def reset_volume(self):
+        self.__volume_level = 65535
+        self.sound.volume(self.__volume_level)
