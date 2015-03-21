@@ -67,9 +67,7 @@ class Sound(object):
 
                         else:
                             self.__sound.play(data)
-
-            if self.__sound and 0 < self.__tt < self.__sound.getPosition():
-                break
+            yield
 
             stream = self.__sound_file.read(512)
 
