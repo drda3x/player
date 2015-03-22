@@ -85,7 +85,7 @@ class Timer(Label):
         self.__reset()
         self.pack(side='right')
 
-        for i in timer_values('1:00', '2:00', 15):
+        for i in timer_values('0:05', '0:15', 5):
             Radiobutton(f3, variable=self.limit, indicatoron=0, text=i[0], value=i[1], padx=5, pady=5).pack(side='left', padx=5)
 
     def __update_view(self):
@@ -118,8 +118,12 @@ class Timer(Label):
 
         if not self.__paused and self.__check_time():
 
-            if self.__time_left() <= self.song.fade_out_dur:
-                self.song.fade_out()
+            try:
+                if self.__time_left <= self.song.fade_out_dur:
+                    self.song.fade_out()
+
+            except TypeError:
+                pass
 
             self.__started += 1
             self.__update_view()
@@ -128,11 +132,12 @@ class Timer(Label):
         elif not self.__check_time():
             self.stop()
 
+    @property
     def __time_left(self):
         return self.__limit - self.__started
 
     def __check_time(self):
-        return self.__limit > self.__started
+        return self.__limit > self.__started if self.__limit else self.song.is_playing
 
     def __set(self):
         self.__id = root.after(1000, self.__exit)
@@ -148,7 +153,7 @@ class Timer(Label):
         try:
             self.__limit = self.limit.get()
         except ValueError:
-            self.__limit = self.song.length(unit='seconds')
+            self.__limit = None
 
         self.__reset()
         self.song.play()
@@ -177,47 +182,6 @@ class Timer(Label):
         self.song.pause()
 
 
-class Song(Sound):
-
-    __volume_level = 100
-    __started = False
-    fade_out_dur = 4
-
-    def __init__(self, master):
-        super(Song, self).__init__(master)
-
-    def __get_params(self):
-        time_int = self.fade_out_dur * 1000 / 200
-
-        return {
-            'time': 200,
-            'level': 100 / time_int
-        }
-
-    def fade_out(self):
-
-        if not self.__started:
-
-            def action():
-                params = self.__get_params()
-                self.__volume_level -= params['level']
-                self.volume(self.__volume_level)
-
-                if self.__volume_level >= 0:
-                    self.__started = True
-                    root.after(params['time'], action)
-
-                else:
-                    self.__started = False
-                    self.reset_volume()
-
-            action()
-
-    def reset_volume(self):
-        self.__volume_level = 100
-        self.volume(self.__volume_level)
-
-
 Frame(root).pack(pady=5)
 song_label = Label(root, text='No song loaded', font='Helvetica 11 bold')
 song_label.pack()
@@ -229,7 +193,7 @@ f0.pack(pady=5)
 f1.pack(pady=5)
 f3.pack(side='left', padx=30)
 
-song = Song(root)
+song = Sound(root)
 timer = Timer(f0)
 timer.song = song
 

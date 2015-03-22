@@ -83,11 +83,15 @@ class Sound(object):
             self.__sound.unpause()
             self.__paused = False
 
-        if self.__queue:
-            self.__queue.next()
+        try:
+            if self.__queue:
+                self.__queue.next()
 
-        else:
-            self.__queue = self.__player()
+            else:
+                self.__queue = self.__player()
+
+        except StopIteration:
+            self.stop()
 
     def pause(self):
         self.__sound.pause()
@@ -104,6 +108,10 @@ class Sound(object):
 
     def volume(self, value):
         self.__sound.setVolume(value)
+
+    @property
+    def is_playing(self):
+        return self.__sound.isPlaying()
 
 
 class SoundManager(object):
@@ -131,11 +139,11 @@ class SoundManager(object):
 
             if self.__status == self.PLAY_STATUS:
                 self.sound.play()
-                self.__play_id = self.main_stream.after(1, loop)
+                self.__play_id = self.main_stream.after(0, loop)
             else:
                 self.main_stream.after_cancel(self.__play_id)
 
-        self.__play_id = self.main_stream.after(1, loop)
+        self.__play_id = self.main_stream.after(0, loop)
 
     def stop(self):
         try:
@@ -159,10 +167,13 @@ class SoundManager(object):
         self.sound.load(file_name)
 
     def __get_fade_out_params(self):
-        time_int = self.fade_out_dur * 1000 / 200
+
+        t = 200
+
+        time_int = self.fade_out_dur * 1000 / t
 
         return {
-            'time': 200,
+            'time': t,
             'level': 65535 / time_int
         }
 
@@ -176,11 +187,11 @@ class SoundManager(object):
                 self.sound.volume(self.__volume_level)
 
                 if self.__volume_level >= 0:
-                    self.__started = True
+                    self.__fade_out_status = True
                     self.main_stream.after(params['time'], action)
 
                 else:
-                    self.__started = False
+                    self.__fade_out_status = False
                     self.reset_volume()
 
             action()
@@ -188,3 +199,7 @@ class SoundManager(object):
     def reset_volume(self):
         self.__volume_level = 65535
         self.sound.volume(self.__volume_level)
+
+    @property
+    def is_playing(self):
+        return self.sound.is_playing
