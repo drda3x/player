@@ -12,7 +12,13 @@ root = Tk()
 
 # =================================================================
 
-folder = u'C:\\Music'
+try:
+    from settings import MUSIC_DIR
+
+    folder = MUSIC_DIR
+
+except Exception:
+    raise 'No music folder. Define music folder in the settings.py file'
 
 # =================================================================
 
@@ -85,7 +91,7 @@ class Timer(Label):
         self.__reset()
         self.pack(side='right')
 
-        for i in timer_values('0:05', '0:15', 5):
+        for i in timer_values('1:00', '2:00', 15):
             Radiobutton(f3, variable=self.limit, indicatoron=0, text=i[0], value=i[1], padx=5, pady=5).pack(side='left', padx=5)
 
     def __update_view(self):

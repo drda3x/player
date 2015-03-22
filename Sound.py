@@ -139,11 +139,11 @@ class SoundManager(object):
 
             if self.__status == self.PLAY_STATUS:
                 self.sound.play()
-                self.__play_id = self.main_stream.after(0, loop)
+                self.__play_id = self.main_stream.after(1, loop)
             else:
                 self.main_stream.after_cancel(self.__play_id)
 
-        self.__play_id = self.main_stream.after(0, loop)
+        self.__play_id = self.main_stream.after(1, loop)
 
     def stop(self):
         try:
