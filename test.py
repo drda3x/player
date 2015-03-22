@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from Sound import Sound
+from Sound import SoundManager as Sound
 from Tkinter import *
 
 
@@ -11,7 +11,7 @@ Frame(root).pack(pady=5)
 f0 = Frame(root)
 f0.pack(pady=5)
 
-s = Sound(0, 1, -1)
+s = Sound(root)
 s.load('zv.mp3')
 
 is_playing = True
@@ -19,32 +19,18 @@ _id = [None]
 
 
 def play():
-    global is_playing
-
-    is_playing = True
-
-    player = s.play()
-
-    def next():
-        if is_playing:
-            player.next()
-            _id[0] = root.after(1, next)
-
-        else:
-            root.after_cancel(_id[0])
-
-    _id[0] = root.after(1, next)
+    s.play()
 
 
 def stop():
-
-    global is_playing
-    is_playing = False
     s.stop()
 
 
+def pause():
+    s.pause()
 
 Button(f0, text='play', command=play).pack(pady=5)
 Button(f0, text='stop', command=stop).pack(pady=5)
+Button(f0, text='pause', command=pause).pack(pady=5)
 
 root.mainloop()
