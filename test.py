@@ -11,7 +11,7 @@ Frame(root).pack(pady=5)
 f0 = Frame(root)
 f0.pack(pady=5)
 
-s = Sound(root)
+s = Sound()
 s.load('zv.mp3')
 
 is_playing = True

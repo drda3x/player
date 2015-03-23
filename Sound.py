@@ -13,13 +13,15 @@ import pymedia.muxer as muxer
 import pymedia.audio.acodec as acodec
 import pymedia.audio.sound as sound
 
+from multiprocessing import Process, Queue
+
 
 class Sound(object):
 
     __EMULATE = 0
     __demuxer = None
     __devises = sound.getODevices()
-    __sound_file = None
+    sound_file = None
     __sound = None
     __card = None
     __rate = None
@@ -38,7 +40,7 @@ class Sound(object):
     def __player(self):
         self.__sound = re_sampler = dec = None
         t = 0
-        stream = self.__sound_file.read(32000)
+        stream = self.sound_file.read(32000)
         i = 0
 
         while len(stream):
@@ -59,6 +61,7 @@ class Sound(object):
                             if 1 < self.__rate < 1:
                                 re_sampler = sound.Resampler((r.sample_rate, r.channels), (int(r.sample_rate / self.__rate), r.channels))
 
+                            self.__sound.setVolume(65535)
                         data = re_sampler.resample(r.data) if re_sampler else r.data
 
                         if self.__EMULATE:
@@ -72,7 +75,7 @@ class Sound(object):
                             self.__sound.play(data)
             yield
 
-            stream = self.__sound_file.read(512)
+            stream = self.sound_file.read(512)
 
         while self.__sound.isPlaying():
             time.sleep(.05)
@@ -98,13 +101,13 @@ class Sound(object):
         self.__paused = True
 
     def stop(self):
-        self.__sound.stop()
-        self.__sound_file.seek(0)
+        self.__sound.stop() if self.__sound else None
+        self.sound_file.seek(0) if self.__sound else None
         self.__queue = None
 
     def load(self, file_path):
         self.__demuxer = muxer.Demuxer(file_path.split('.')[-1].lower())
-        self.__sound_file = file(file_path, 'rb')
+        self.sound_file = file(file_path, 'rb')
 
     def volume(self, value):
         self.__sound.setVolume(value)
@@ -117,38 +120,52 @@ class Sound(object):
 class SoundManager(object):
 
     sound = Sound(0, 1, -1)
-    main_stream = None
     __play_id = None
     __status = None
     __fade_out_status = False
     __volume_level = 65535
+    __sound_stream = None
+    __connection = Queue()
     fade_out_dur = 4
 
     PLAY_STATUS = 'play'
     STOP_STATUS = 'stop'
     PAUSE_STATUS = 'pause'
 
-    def __init__(self, main_stream):
-        self.main_stream = main_stream
+    def manager(self, conn, file_name):
+
+        status = None
+        self.sound.load(file_name)
+
+        while True:
+
+            try:
+                status = conn.get(block=False)[0]
+
+            except Exception:
+                pass
+
+            if status == 'play':
+                self.sound.play()
+
+            elif status:
+                self.sound.stop() if status == 'stop' else self.sound.pause()
 
     def play(self):
 
         self.__status = self.PLAY_STATUS
 
-        def loop():
+        try:
+            self.__sound_stream.start()
+        except AssertionError:
+            pass
 
-            if self.__status == self.PLAY_STATUS:
-                self.sound.play()
-                self.__play_id = self.main_stream.after(1, loop)
-            else:
-                self.main_stream.after_cancel(self.__play_id)
-
-        self.__play_id = self.main_stream.after(1, loop)
+        self.__connection.put(['play'])
 
     def stop(self):
         try:
-            self.sound.stop()
             self.__status = self.STOP_STATUS
+            self.__connection.put(['stop'])
 
         except Exception:
             pass
@@ -158,12 +175,15 @@ class SoundManager(object):
 
             if self.__status == self.PLAY_STATUS:
                 self.__status = self.PAUSE_STATUS
-                self.sound.pause()
+                self.__connection.put(['pause'])
 
             else:
                 self.play()
 
     def load(self, file_name):
+        self.__sound_stream.terminate() if self.__sound_stream else None
+
+        self.__sound_stream = Process(target= self.manager, args=(self.__connection, file_name))
         self.sound.load(file_name)
 
     def __get_fade_out_params(self):
@@ -178,23 +198,23 @@ class SoundManager(object):
         }
 
     def fade_out(self):
-
-        if not self.__fade_out_status:
-
-            def action():
-                params = self.__get_fade_out_params()
-                self.__volume_level -= params['level']
-                self.sound.volume(self.__volume_level)
-
-                if self.__volume_level >= 0:
-                    self.__fade_out_status = True
-                    self.main_stream.after(params['time'], action)
-
-                else:
-                    self.__fade_out_status = False
-                    self.reset_volume()
-
-            action()
+        pass
+        # if not self.__fade_out_status:
+        #
+        #     def action():
+        #         params = self.__get_fade_out_params()
+        #         self.__volume_level -= params['level']
+        #         self.sound.volume(self.__volume_level)
+        #
+        #         if self.__volume_level >= 0:
+        #             self.__fade_out_status = True
+        #             self.main_stream.after(params['time'], action)
+        #
+        #         else:
+        #             self.__fade_out_status = False
+        #             self.reset_volume()
+        #
+        #     action()
 
     def reset_volume(self):
         self.__volume_level = 65535
