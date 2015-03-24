@@ -127,7 +127,7 @@ if __name__ == '__main__':
             if not self.__paused and self.__check_time():
 
                 try:
-                    if self.__time_left <= self.song.fade_out_dur:
+                    if self.__time_left <= self.song.fade_out_config['duration']:
                         self.song.fade_out()
 
                 except TypeError:
@@ -145,7 +145,7 @@ if __name__ == '__main__':
             return self.__limit - self.__started
 
         def __check_time(self):
-            return self.__limit > self.__started if self.__limit else self.song.is_playing
+            return self.__limit > self.__started if self.__limit else self.song.is_playing if self.__started > 0 else True
 
         def __set(self):
             self.__id = root.after(1000, self.__exit)
@@ -207,7 +207,6 @@ if __name__ == '__main__':
 
     play_list = PlayList(f1, folder)
 
-
     def play():
         stop()
         filename = play_list.dir + '\\' + play_list.selected if play_list.selected else None
@@ -218,10 +217,8 @@ if __name__ == '__main__':
             song_label.config(text=play_list.selected)
             timer.start()
 
-
     def stop():
         timer.stop()
-
 
     def pause():
         timer.pause()

@@ -114,7 +114,7 @@ class Sound(object):
 
     @property
     def is_playing(self):
-        return self.__sound.isPlaying()
+        return self.__sound.isPlaying() > 0 and self.__queue is not None
 
 
 class SoundManager(object):
@@ -125,47 +125,65 @@ class SoundManager(object):
     __fade_out_status = False
     __volume_level = 65535
     __sound_stream = None
-    __connection = Queue()
-    fade_out_dur = 4
+    __connection = {
+        'send': Queue(),
+        'get': Queue()
+    }
+    fade_out_config = {
+        'start_time': None,
+        'duration': 4,
+        'normal_volume': 65535,
+        'current_volume': 65535,
+        'decrease_value': None,
+        'time_step': 200
+    }
 
     PLAY_STATUS = 'play'
     STOP_STATUS = 'stop'
     PAUSE_STATUS = 'pause'
 
-    def manager(self, conn, file_name):
+    def manager(self, request, response, file_name):
 
-        status = None
+        caller = None
+        data = None
+        actions = {
+            self.PLAY_STATUS: self.sound.play,
+            self.STOP_STATUS: self.sound.stop,
+            self.PAUSE_STATUS: self.sound.pause,
+            'fade_out': [self.__fade_out_action, self.sound.play]
+            }
+
         self.sound.load(file_name)
 
         while True:
 
             try:
-                status = conn.get(block=False)[0]
-
+                data = request.get(block=False)
             except Exception:
                 pass
 
-            if status == 'play':   # todo заменить на PLAY_STATUS
-                self.sound.play()
+            if data and 'action' in data:
+                caller = data['action']
 
-            elif status:
-                self.sound.stop() if status == 'stop' else self.sound.pause()  # todo заменить на PLAY_STATUS
+            if caller:
+                funcs = actions[caller]
+                map(lambda x: x(), funcs) if hasattr(funcs, '__iter__') else funcs()
+
+            try:
+                response.put({'is_playing': self.sound.is_playing})
+            except AttributeError:
+                pass
 
     def play(self):
-
         self.__status = self.PLAY_STATUS
-
-        try:
-            self.__sound_stream.start()
-        except AssertionError:
-            pass
-
-        self.__connection.put(self.__status)
+        self.__sound_stream.start() if not self.__sound_stream.is_alive() else None
+        self.__connection['send'].put({'action': self.__status})
 
     def stop(self):
+        print 'stop'
         try:
             self.__status = self.STOP_STATUS
-            self.__connection.put(self.__status)
+            self.__connection['send'].put({'action': self.__status})
 
         except Exception:
             pass
@@ -175,7 +193,7 @@ class SoundManager(object):
 
             if self.__status == self.PLAY_STATUS:
                 self.__status = self.PAUSE_STATUS
-                self.__connection.put(self.__status)
+                self.__connection['send'].put({'action': self.__status})
 
             else:
                 self.play()
@@ -183,46 +201,38 @@ class SoundManager(object):
     def load(self, file_name):
         self.__sound_stream.terminate() if self.__sound_stream else None
 
-        self.__sound_stream = Process(target= self.manager, args=(self.__connection, file_name))
+        self.__sound_stream = Process(target= self.manager, args=(self.__connection['send'], self.__connection['get'], file_name))
         self.sound.load(file_name)
 
-    def __get_fade_out_params(self):
+    def __fade_out_action(self):
+        cur_time = time.time()
 
-        t = 200
+        def decrease_or_reset():
+            if self.fade_out_config['current_volume'] >= 0:
+                self.fade_out_config['current_volume'] -= self.fade_out_config['decrease_value']
+                self.sound.volume(self.fade_out_config['current_volume'])
 
-        time_int = self.fade_out_dur * 1000 / t
+            else:
+                self.sound.volume(self.fade_out_config['normal_volume'])
 
-        return {
-            'time': t,
-            'level': 65535 / time_int
-        }
+            return self.fade_out_config['current_volume']
+
+        if not self.fade_out_config['start_time']:
+            self.fade_out_config['start_time'] = cur_time
+            self.fade_out_config['decrease_value'] = self.fade_out_config['normal_volume'] / (self.fade_out_config['duration'] * 1000 / self.fade_out_config['time_step'])
+            self.fade_out_config['current_volume'] = self.fade_out_config['normal_volume']
+            decrease_or_reset()
+
+        elif (cur_time - self.fade_out_config['start_time']) * 1000 >= self.fade_out_config['time_step']:
+            self.fade_out_config['start_time'] = cur_time
+            decrease_or_reset()
 
     def fade_out(self):
-        pass
-        # if not self.__fade_out_status:
-        #
-        #     def action():
-        #         params = self.__get_fade_out_params()
-        #         self.__volume_level -= params['level']
-        #         self.sound.volume(self.__volume_level)
-        #
-        #         if self.__volume_level >= 0:
-        #             self.__fade_out_status = True
-        #             self.main_stream.after(params['time'], action)
-        #
-        #         else:
-        #             self.__fade_out_status = False
-        #             self.reset_volume()
-        #
-        #     action()
-
-    def reset_volume(self):
-        self.__volume_level = 65535
-        self.sound.volume(self.__volume_level)
+        self.__connection['send'].put({'action': 'fade_out'})
 
     @property
     def is_playing(self):
-        return self.sound.is_playing
+        return self.__connection['get'].get()['is_playing'] if not self.__connection['get'].empty() else False
 
     def destroy(self):
         self.__sound_stream.terminate() if self.__sound_stream else None

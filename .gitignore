@@ -2,3 +2,4 @@ $cat .gitignore
 
 .idea/
 settings.py
+*.pyc
