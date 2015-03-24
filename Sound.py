@@ -223,3 +223,6 @@ class SoundManager(object):
     @property
     def is_playing(self):
         return self.sound.is_playing
+
+    def destroy(self):
+        self.__sound_stream.terminate() if self.__sound_stream else None
