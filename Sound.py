@@ -145,11 +145,11 @@ class SoundManager(object):
             except Exception:
                 pass
 
-            if status == 'play':
+            if status == 'play':   # todo заменить на PLAY_STATUS
                 self.sound.play()
 
             elif status:
-                self.sound.stop() if status == 'stop' else self.sound.pause()
+                self.sound.stop() if status == 'stop' else self.sound.pause()  # todo заменить на PLAY_STATUS
 
     def play(self):
 
@@ -160,12 +160,12 @@ class SoundManager(object):
         except AssertionError:
             pass
 
-        self.__connection.put(['play'])
+        self.__connection.put(self.__status)
 
     def stop(self):
         try:
             self.__status = self.STOP_STATUS
-            self.__connection.put(['stop'])
+            self.__connection.put(self.__status)
 
         except Exception:
             pass
@@ -175,7 +175,7 @@ class SoundManager(object):
 
             if self.__status == self.PLAY_STATUS:
                 self.__status = self.PAUSE_STATUS
-                self.__connection.put(['pause'])
+                self.__connection.put(self.__status)
 
             else:
                 self.play()
@@ -223,3 +223,6 @@ class SoundManager(object):
     @property
     def is_playing(self):
         return self.sound.is_playing
+
+    def destroy(self):
+        self.__sound_stream.terminate() if self.__sound_stream else None

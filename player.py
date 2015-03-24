@@ -226,8 +226,15 @@ if __name__ == '__main__':
     def pause():
         timer.pause()
 
+    def on_quit():
+        song.destroy()
+        root.quit()
+        
+
     Button(f0, text='play', command=play, height=5, width=5).pack(side='left')
     Button(f0, text='stop', command=stop, height=5, width=5).pack(side='left')
     Button(f0, text='pause', command=pause, height=5, width=5).pack(side='left')
+
+    root.protocol("WM_DELETE_WINDOW", on_quit)
 
     root.mainloop()
