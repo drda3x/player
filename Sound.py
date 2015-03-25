@@ -98,13 +98,16 @@ class Sound(object):
         except StopIteration:
             self.stop()
 
+        except ValueError:
+            pass
+
     def pause(self):
         self.__sound.pause()
         self.__paused = True
 
     def stop(self):
         self.__sound.stop() if self.__sound else None
-        self.sound_file.seek(0) if self.__sound else None
+        self.sound_file.close() if self.__sound else None
         self.__queue = None
 
     def load(self, file_path):
@@ -112,7 +115,7 @@ class Sound(object):
         self.sound_file = file(file_path, 'rb')
 
     def volume(self, value):
-        self.__sound.setVolume(value)
+        self.__sound.setVolume(value) if self.__sound else None
 
     @property
     def is_playing(self):
