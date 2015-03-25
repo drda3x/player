@@ -161,7 +161,7 @@ if __name__ == '__main__':
             try:
                 self.__limit = self.limit.get()
             except ValueError:
-                self.__limit = None
+                self.__limit = self.song.length
 
             self.__reset()
             self.song.play()

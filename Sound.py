@@ -15,6 +15,8 @@ import pymedia.audio.sound as sound
 
 from multiprocessing import Process, Queue
 
+from mutagen.mp3 import MP3
+
 
 class Sound(object):
 
@@ -170,6 +172,10 @@ class SoundManager(object):
                 map(lambda x: x(), funcs) if hasattr(funcs, '__iter__') else funcs()
 
             try:
+
+                while not response.empty():
+                    response.get(block=False)
+
                 response.put({'is_playing': self.sound.is_playing})
             except AttributeError:
                 pass
@@ -180,7 +186,6 @@ class SoundManager(object):
         self.__connection['send'].put({'action': self.__status})
 
     def stop(self):
-        print 'stop'
         try:
             self.__status = self.STOP_STATUS
             self.__connection['send'].put({'action': self.__status})
@@ -200,9 +205,9 @@ class SoundManager(object):
 
     def load(self, file_name):
         self.__sound_stream.terminate() if self.__sound_stream else None
-
         self.__sound_stream = Process(target= self.manager, args=(self.__connection['send'], self.__connection['get'], file_name))
         self.sound.load(file_name)
+        self.sound.length = MP3(file_name).info.length
 
     def __fade_out_action(self):
         cur_time = time.time()
@@ -233,6 +238,10 @@ class SoundManager(object):
     @property
     def is_playing(self):
         return self.__connection['get'].get()['is_playing'] if not self.__connection['get'].empty() else False
+
+    @property
+    def length(self):
+        return self.sound.length
 
     def destroy(self):
         self.__sound_stream.terminate() if self.__sound_stream else None
