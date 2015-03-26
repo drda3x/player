@@ -226,11 +226,19 @@ if __name__ == '__main__':
     def on_quit():
         song.destroy()
         root.quit()
-        
 
-    Button(f0, text='play', command=play, height=5, width=5).pack(side='left')
-    Button(f0, text='stop', command=stop, height=5, width=5).pack(side='left')
-    Button(f0, text='pause', command=pause, height=5, width=5).pack(side='left')
+    buttons = [
+    ('play', play), 
+    ('stop', stop), 
+    ('pause', pause)
+    ]
+
+    for button in buttons:
+        Button(f0, text=button[0], command=button[1], height=3, width=5).pack(side='left', padx=5)
+
+    # Button(f0, text='play', command=play, height=3, width=5).pack(side='left')
+    # Button(f0, text='stop', command=stop, height=5, width=5).pack(side='left')
+    # Button(f0, text='pause', command=pause, height=5, width=5).pack(side='left')
 
     root.protocol("WM_DELETE_WINDOW", on_quit)
 
