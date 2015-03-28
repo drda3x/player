@@ -106,11 +106,15 @@ class Sound(object):
 
     def stop(self):
 
-        if self.__sound:
-            self.__sound.stop()
-            self.sound_file.seek(0)
-            self.sound_file.close()
-        self.__queue = None
+        try:
+            if self.__sound:
+                self.__sound.stop()
+                self.sound_file.seek(0)
+                self.sound_file.close()
+            self.__queue = None
+
+        except ValueError:
+            pass
 
     def load(self, file_path):
         self.__demuxer = muxer.Demuxer(file_path.split('.')[-1].lower())
@@ -177,6 +181,8 @@ class SoundManager(object):
             if caller:
                 funcs = actions[caller]
                 map(lambda x: x(), funcs) if hasattr(funcs, '__iter__') else funcs()
+
+
 
     def play(self):
         u"""
