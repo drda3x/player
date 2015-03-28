@@ -94,11 +94,12 @@ class Sound(object):
 
         except StopIteration:
             # Приходит когда файл закончился
+            print 'StopIteration'
             self.stop()
 
         except ValueError:
             # Файл закрыт
-            pass
+            print 'ValueError - sound.play'
 
     def pause(self):
         self.__sound.pause()
@@ -114,7 +115,7 @@ class Sound(object):
             self.__queue = None
 
         except ValueError:
-            pass
+            print 'ValueError - sound.stop'
 
     def load(self, file_path):
         self.__demuxer = muxer.Demuxer(file_path.split('.')[-1].lower())
@@ -201,7 +202,7 @@ class SoundManager(object):
             self.__connection.put({'action': self.__status})
 
         except Exception:
-            pass
+            print 'Error in stop-command'
 
     def pause(self):
         u"""
