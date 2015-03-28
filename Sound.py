@@ -92,6 +92,7 @@ class Sound(object):
             else:
                 self.__queue = self.__player()
 
+        # todo перенести обработку всех ошибок в менеджер!!!
         except StopIteration:
             # Приходит когда файл закончился
             print 'StopIteration'
