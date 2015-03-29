@@ -250,6 +250,7 @@ class SoundManager(object):
 
             else:
                 self.sound.volume(self.fade_out_config['normal_volume'])
+                self.fade_out_config['start_time'] = None
 
             return self.fade_out_config['current_volume']
 
