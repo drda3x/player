@@ -61,7 +61,6 @@ class Sound(object):
                             if 1 < self.__rate < 1:
                                 re_sampler = sound.Resampler((r.sample_rate, r.channels), (int(r.sample_rate / self.__rate), r.channels))
 
-                            self.__sound.setVolume(65535)
                         data = re_sampler.resample(r.data) if re_sampler else r.data
 
                         if self.__EMULATE:
@@ -100,6 +99,7 @@ class Sound(object):
         if self.__sound:
             self.__sound.stop()
             self.sound_file.seek(0)
+            self.__sound.setVolume(65535)
 
         self.__queue = None
 
