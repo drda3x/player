@@ -85,38 +85,22 @@ class Sound(object):
             self.__sound.unpause()
             self.__paused = False
 
-        try:
-            if self.__queue:
-                self.__queue.next()
+        if self.__queue:
+            self.__queue.next()
 
-            else:
-                self.__queue = self.__player()
-
-        # todo перенести обработку всех ошибок в менеджер!!!
-        except StopIteration:
-            # Приходит когда файл закончился
-            print 'StopIteration'
-            self.stop()
-
-        except ValueError:
-            # Файл закрыт
-            print 'ValueError - sound.play'
+        else:
+            self.__queue = self.__player()
 
     def pause(self):
         self.__sound.pause()
         self.__paused = True
 
     def stop(self):
+        if self.__sound:
+            self.__sound.stop()
+            self.sound_file.seek(0)
 
-        try:
-            if self.__sound:
-                self.__sound.stop()
-                self.sound_file.seek(0)
-                self.sound_file.close()
-            self.__queue = None
-
-        except ValueError:
-            print 'ValueError - sound.stop'
+        self.__queue = None
 
     def load(self, file_path):
         self.__demuxer = muxer.Demuxer(file_path.split('.')[-1].lower())
@@ -155,7 +139,10 @@ class SoundManager(object):
     STOP_STATUS = 'stop'
     PAUSE_STATUS = 'pause'
 
-    def manager(self, request, file_name):
+    def __init__():
+        self.__sound_stream = Process(target=self.manager, args=(self.__connection,))
+
+    def manager(self, request):
         u"""
         Метод для перенаправления управляющих комманд в поток воспроизведения
         """
@@ -168,23 +155,29 @@ class SoundManager(object):
             'fade_out': [self.__fade_out_action, self.sound.play]
             }
 
-        self.sound.load(file_name)
+        block_stream = False
 
         while True:
 
-            try:
-                data = request.get(block=False)
-            except Exception:
-                pass
+            if not request.is_empty() or block_stream:
+                data = request.get()
 
-            if data and 'action' in data:
-                caller = data['action']
+                if 'action' in data:
+                    caller = data['action']
+
+                elif 'load' in data:
+                    self.sound.load(data['load'])
+
+                block_stream = False
 
             if caller:
-                funcs = actions[caller]
-                map(lambda x: x(), funcs) if hasattr(funcs, '__iter__') else funcs()
+                try:
+                    funcs = actions[caller]
+                    map(lambda x: x(), funcs) if hasattr(funcs, '__iter__') else funcs()
 
-
+                except StopIteration:
+                    actions[self.STOP_STATUS]()
+                    block_stream = True
 
     def play(self):
         u"""
@@ -222,9 +215,8 @@ class SoundManager(object):
         u"""
         Загрузка файла
         """
-        self.__sound_stream.terminate() if self.__sound_stream else None
-        self.__sound_stream = Process(target= self.manager, args=(self.__connection, file_name))
-        self.sound.load(file_name)
+        self.__sound_stream.start() if not self.__sound_stream.is_alive() else None
+        self.__connection.put({'load': file_name})
         self.sound.length = MP3(file_name).info.length
     
     def fade_out(self):
