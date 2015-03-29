@@ -27,6 +27,7 @@ class Sound(object):
     __tt = None
     __queue = None
     __paused = None
+    length = None
 
     def __init__(self, card, rate, tt):
         self.__card = card
@@ -103,6 +104,10 @@ class Sound(object):
         self.__queue = None
 
     def load(self, file_path):
+
+        if self.sound_file:
+            self.sound_file.close()
+
         self.__demuxer = muxer.Demuxer(file_path.split('.')[-1].lower())
         self.sound_file = file(file_path, 'rb')
 
@@ -139,7 +144,7 @@ class SoundManager(object):
     STOP_STATUS = 'stop'
     PAUSE_STATUS = 'pause'
 
-    def __init__():
+    def __init__(self):
         self.__sound_stream = Process(target=self.manager, args=(self.__connection,))
 
     def manager(self, request):
@@ -157,9 +162,17 @@ class SoundManager(object):
 
         block_stream = False
 
+        def clear_queue():
+            while not request.empty():
+                request.get()
+
         while True:
 
-            if not request.is_empty() or block_stream:
+            if not request.empty() or block_stream:
+                if block_stream:
+                    clear_queue()
+                    block_stream = False
+
                 data = request.get()
 
                 if 'action' in data:
@@ -167,8 +180,6 @@ class SoundManager(object):
 
                 elif 'load' in data:
                     self.sound.load(data['load'])
-
-                block_stream = False
 
             if caller:
                 try:
@@ -262,4 +273,5 @@ class SoundManager(object):
         u"""
         Уничтожение всех потоков при закрытии
         """
-        self.__sound_stream.terminate() if self.__sound_stream else None
+        if self.__sound_stream and self.__sound_stream.is_alive():
+            self.__sound_stream.terminate()
