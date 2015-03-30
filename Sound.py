@@ -27,7 +27,6 @@ class Sound(object):
     __tt = None
     __queue = None
     __paused = None
-    length = None
 
     def __init__(self, card, rate, tt):
         self.__card = card
@@ -61,6 +60,7 @@ class Sound(object):
                             if 1 < self.__rate < 1:
                                 re_sampler = sound.Resampler((r.sample_rate, r.channels), (int(r.sample_rate / self.__rate), r.channels))
 
+                            self.__sound.setVolume(65535)
                         data = re_sampler.resample(r.data) if re_sampler else r.data
 
                         if self.__EMULATE:
@@ -94,20 +94,15 @@ class Sound(object):
     def pause(self):
         self.__sound.pause()
         self.__paused = True
-
+ 
     def stop(self):
         if self.__sound:
             self.__sound.stop()
             self.sound_file.seek(0)
-            self.__sound.setVolume(65535)
 
         self.__queue = None
 
     def load(self, file_path):
-
-        if self.sound_file:
-            self.sound_file.close()
-
         self.__demuxer = muxer.Demuxer(file_path.split('.')[-1].lower())
         self.sound_file = file(file_path, 'rb')
 
@@ -162,16 +157,13 @@ class SoundManager(object):
 
         block_stream = False
 
-        def clear_queue():
-            while not request.empty():
-                request.get()
-
         while True:
 
             if not request.empty() or block_stream:
+
                 if block_stream:
-                    clear_queue()
-                    block_stream = False
+                    while not request.empty():
+                        request.get()
 
                 data = request.get()
 
@@ -180,6 +172,8 @@ class SoundManager(object):
 
                 elif 'load' in data:
                     self.sound.load(data['load'])
+
+                block_stream = False
 
             if caller:
                 try:
@@ -197,6 +191,7 @@ class SoundManager(object):
         self.__status = self.PLAY_STATUS
         self.__sound_stream.start() if not self.__sound_stream.is_alive() else None
         self.__connection.put({'action': self.__status})
+        print 'START PLAYING\n**********************************************\n'
 
     def stop(self):
         u"""
@@ -230,6 +225,12 @@ class SoundManager(object):
         self.__connection.put({'load': file_name})
         self.sound.length = MP3(file_name).info.length
     
+    def print_conf(self):
+        for i in self.fade_out_config:
+            print 'fade_out_config[%s]: %s' % (i, self.fade_out_config[i])
+
+        print '\n ======================================= \n'
+
     def fade_out(self):
         u"""
         Управляющая комманда на 'FADE_OUT'
@@ -250,7 +251,6 @@ class SoundManager(object):
 
             else:
                 self.sound.volume(self.fade_out_config['normal_volume'])
-                self.fade_out_config['start_time'] = None
 
             return self.fade_out_config['current_volume']
 
@@ -260,11 +260,12 @@ class SoundManager(object):
             self.fade_out_config['decrease_value'] = self.fade_out_config['normal_volume'] / (self.fade_out_config['duration'] * 1000 / self.fade_out_config['time_step'])
             self.fade_out_config['current_volume'] = self.fade_out_config['normal_volume']
             decrease_or_reset()
-
+            self.print_conf()
         elif (cur_time - self.fade_out_config['start_time']) * 1000 >= self.fade_out_config['time_step']:
 
             self.fade_out_config['start_time'] = cur_time
             decrease_or_reset()
+            self.print_conf()
 
     @property
     def length(self):
@@ -274,5 +275,4 @@ class SoundManager(object):
         u"""
         Уничтожение всех потоков при закрытии
         """
-        if self.__sound_stream and self.__sound_stream.is_alive():
-            self.__sound_stream.terminate()
+        self.__sound_stream.terminate() if self.__sound_stream else None

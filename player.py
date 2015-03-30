@@ -93,7 +93,7 @@ if __name__ == '__main__':
             self.__reset()
             self.pack(side='right')
 
-            for i in timer_values('1:00', '2:00', 15):
+            for i in timer_values('0:05', '0:20', 5):
                 Radiobutton(f3, variable=self.limit, indicatoron=0, text=i[0], value=i[1], padx=5, pady=5).pack(side='left', padx=5)
 
         def __update_view(self):
