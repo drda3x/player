@@ -37,13 +37,11 @@ if __name__ == '__main__':
 
             num = re.compile('^\d{2,3}')
 
-            def insert_bpm(file_name):
+            def bpm(file_name):
                 _bpm = num.search(file_name)
-                bpm = int(file_name[0:_bpm.end()])
+                return int(file_name[0:_bpm.end()]) if _bpm else 0
 
-                return (bpm, file_name)
-
-            self.songs_list = [insert_bpm(elem) for elem in filter(lambda x: x.endswith('.mp3'), os.listdir(self.dir))]
+            self.songs_list = [(bpm(elem), elem) for elem in filter(lambda x: x.endswith('.mp3'), os.listdir(self.dir))]
 
             try:
                 self.songs_list.sort(key=lambda x: x[0])
