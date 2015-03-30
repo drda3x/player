@@ -157,7 +157,7 @@ class SoundManager(object):
             duration = 4
             step = 200
             to_ms = lambda x: x * 1000
-            dec = normal_volume_level / (to_ms(duration) / step) + 250
+            dec = normal_volume_level / (to_ms(duration) / step)
 
             if self.sound:
                 self.sound.volume(normal_volume_level)
@@ -168,7 +168,7 @@ class SoundManager(object):
 
                 if to_ms(current_time - action.last_started_time) >= step:
                     action.volume_value -= dec
-                    self.sound.volume(action.volume_value)
+                    self.sound.volume(action.volume_value if action.volume_value > 0 else 0)
                     action.last_started_time = current_time
 
             action.volume_value = normal_volume_level
@@ -304,4 +304,8 @@ class SoundManager(object):
         u"""
         Уничтожение всех потоков при закрытии
         """
-        self.__sound_stream.terminate() if self.__sound_stream else None
+        try:
+            self.__sound_stream.terminate() if self.__sound_stream else None
+
+        except AttributeError:
+            pass

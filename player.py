@@ -3,7 +3,7 @@
 
 #todo СТОП-ПАУЗА ... Таймер скачет
 
-import os, sys
+import os, sys, re
 from Tkinter import *
 from Sound import SoundManager as Sound
 
@@ -35,15 +35,23 @@ if __name__ == '__main__':
             self.__scroll_bar.pack(side=RIGHT, fill=Y)
             self.__lb.pack(side=LEFT, fill=BOTH, expand=1)
 
-            self.songs_list = filter(lambda x: x.endswith('.mp3'), os.listdir(self.dir))
+            num = re.compile('^\d{2,3}')
+
+            def insert_bpm(file_name):
+                _bpm = num.search(file_name)
+                bpm = int(file_name[0:_bpm.end()])
+
+                return (bpm, file_name)
+
+            self.songs_list = [insert_bpm(elem) for elem in filter(lambda x: x.endswith('.mp3'), os.listdir(self.dir))]
 
             try:
-                self.songs_list.sort(key=lambda x: x.split(' - ')[0])
+                self.songs_list.sort(key=lambda x: x[0])
             except Exception:
                 pass
 
             for song in self.songs_list:
-                self.__lb.insert(END, song)
+                self.__lb.insert(END, song[1])
 
             self.__lb.pack()
 
