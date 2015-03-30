@@ -76,8 +76,12 @@ class Sound(object):
 
             stream = self.sound_file.read(512)
 
-        while self.__sound.isPlaying():
-            time.sleep(.05)
+        try:
+            while self.__sound.isPlaying():
+                time.sleep(.05)
+
+        except AttributeError:
+            pass
 
     def play(self):
 
@@ -98,11 +102,11 @@ class Sound(object):
     def stop(self):
         if self.__sound:
             self.__sound.stop()
-            self.sound_file.seek(0)
 
         self.__queue = None
 
     def load(self, file_path):
+        self.sound_file.close() if self.sound_file else None
         self.__demuxer = muxer.Demuxer(file_path.split('.')[-1].lower())
         self.sound_file = file(file_path, 'rb')
 
@@ -146,15 +150,46 @@ class SoundManager(object):
         u"""
         Метод для перенаправления управляющих комманд в поток воспроизведения
         """
+
+        def get_new_fade_out_action():
+
+            normal_volume_level = 65535
+            duration = 4
+            step = 200
+            to_ms = lambda x: x * 1000
+            dec = normal_volume_level / (to_ms(duration) / step) + 500
+
+            if self.sound:
+                self.sound.volume(normal_volume_level)
+
+            def action():
+
+                current_time = time.time()
+
+                if to_ms(current_time - action.last_started_time) >= step:
+                    action.volume_value -= dec
+                    self.sound.volume(action.volume_value)
+                    action.last_started_time = current_time
+
+            action.volume_value = normal_volume_level
+            action.last_started_time = time.time()
+
+            return action
+
         caller = None
-        data = None
+
+        def stop_action():
+            self.sound.stop()
+            actions['fade_out'][0] = get_new_fade_out_action()
+
         actions = {
             self.PLAY_STATUS: self.sound.play,
-            self.STOP_STATUS: self.sound.stop,
+            self.STOP_STATUS: stop_action,
             self.PAUSE_STATUS: self.sound.pause,
-            'fade_out': [self.__fade_out_action, self.sound.play]
-            }
+            'fade_out': [get_new_fade_out_action(), self.sound.play]
+        }
 
+        get_new_fade_out_action()
         block_stream = False
 
         while True:
@@ -180,6 +215,8 @@ class SoundManager(object):
                     funcs = actions[caller]
                     map(lambda x: x(), funcs) if hasattr(funcs, '__iter__') else funcs()
 
+                    # block_stream = False if caller in (self.PLAY_STATUS, 'fade_out') else True
+
                 except StopIteration:
                     actions[self.STOP_STATUS]()
                     block_stream = True
@@ -191,7 +228,6 @@ class SoundManager(object):
         self.__status = self.PLAY_STATUS
         self.__sound_stream.start() if not self.__sound_stream.is_alive() else None
         self.__connection.put({'action': self.__status})
-        print 'START PLAYING\n**********************************************\n'
 
     def stop(self):
         u"""
@@ -224,12 +260,6 @@ class SoundManager(object):
         self.__sound_stream.start() if not self.__sound_stream.is_alive() else None
         self.__connection.put({'load': file_name})
         self.sound.length = MP3(file_name).info.length
-    
-    def print_conf(self):
-        for i in self.fade_out_config:
-            print 'fade_out_config[%s]: %s' % (i, self.fade_out_config[i])
-
-        print '\n ======================================= \n'
 
     def fade_out(self):
         u"""
@@ -260,12 +290,11 @@ class SoundManager(object):
             self.fade_out_config['decrease_value'] = self.fade_out_config['normal_volume'] / (self.fade_out_config['duration'] * 1000 / self.fade_out_config['time_step'])
             self.fade_out_config['current_volume'] = self.fade_out_config['normal_volume']
             decrease_or_reset()
-            self.print_conf()
+
         elif (cur_time - self.fade_out_config['start_time']) * 1000 >= self.fade_out_config['time_step']:
 
             self.fade_out_config['start_time'] = cur_time
             decrease_or_reset()
-            self.print_conf()
 
     @property
     def length(self):
