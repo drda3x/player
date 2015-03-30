@@ -157,7 +157,7 @@ class SoundManager(object):
             duration = 4
             step = 200
             to_ms = lambda x: x * 1000
-            dec = normal_volume_level / (to_ms(duration) / step) + 500
+            dec = normal_volume_level / (to_ms(duration) / step)
 
             if self.sound:
                 self.sound.volume(normal_volume_level)
