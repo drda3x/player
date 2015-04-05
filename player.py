@@ -5,53 +5,47 @@
 
 import os, sys, re
 from Tkinter import *
+from tkFileDialog  import askdirectory 
 from Sound import SoundManager as Sound
 
 
 if __name__ == '__main__':
 
     root = Tk()
-
-    # =================================================================
-
-    try:
-        from settings import MUSIC_DIR
-
-        folder = MUSIC_DIR
-
-    except Exception:
-        raise 'No music folder. Define music folder in the settings.py file'
-
-    # =================================================================
-
+    root.title('My super player')
 
     class PlayList():
 
-        def __init__(self, frame, path):
+        def __init__(self, frame):
             self.__scroll_bar = Scrollbar(frame, orient=VERTICAL)
             self.__lb = Listbox(frame, selectmode=SINGLE, yscrollcommand=self.__scroll_bar.set,  height=25, width=90, font=5)
-            self.dir = path
             self.__scroll_bar.config(command=self.__lb.yview)
             self.__scroll_bar.pack(side=RIGHT, fill=Y)
             self.__lb.pack(side=LEFT, fill=BOTH, expand=1)
 
-            num = re.compile('^\d{2,3}')
+        def load(self):
 
-            def bpm(file_name):
-                _bpm = num.search(file_name)
-                return int(file_name[0:_bpm.end()]) if _bpm else 0
+            folder = askdirectory()
 
-            self.songs_list = [(bpm(elem), elem) for elem in filter(lambda x: x.endswith('.mp3'), os.listdir(self.dir))]
+            if folder:
+                self.__lb.delete(0, END)
+                self.dir = folder
 
-            try:
-                self.songs_list.sort(key=lambda x: x[0])
-            except Exception:
-                pass
+                num = re.compile('^\d{2,3}')
+                def bpm(file_name):
+                    _bpm = num.search(file_name)
+                    return int(file_name[0:_bpm.end()]) if _bpm else 0
 
-            for song in self.songs_list:
-                self.__lb.insert(END, song[1])
+                self.songs_list = [(bpm(elem), elem) for elem in filter(lambda x: x.endswith('.mp3'), os.listdir(self.dir))]
 
-            self.__lb.pack()
+                if len(self.songs_list) > 0:
+                    try:
+                        self.songs_list.sort(key=lambda x: x[0])
+                    except Exception:
+                        pass
+
+                    for song in self.songs_list:
+                        self.__lb.insert(END, song[1])
 
         @property
         def selected(self):
@@ -60,12 +54,18 @@ if __name__ == '__main__':
             except IndexError:
                 return None
 
+        def __mark_elem(self, index, color):
+            self.__lb.itemconfig(index, {'fg': color})
+
         def set_as_played(self):
-            self.__lb.itemconfig(int(self.__lb.curselection()[0]), {'fg': '#e6e6e6'})
+            self.__mark_elem(int(self.__lb.curselection()[0]), '#e6e6e6')
 
         def cancel_marking(self):
-            i = len()
-            while
+            i = self.__lb.size() - 1
+
+            while i >= 0:
+                self.__mark_elem(i, '#000000')
+                i -= 1
 
 
     class Timer(Label):
@@ -206,13 +206,14 @@ if __name__ == '__main__':
         def is_limited(self):
 
             try:
-                self.limit.get()
-                return True
+                limit = self.limit.get()
+                return True if limit > 0 else False
 
             except ValueError:
                 return False
 
     Frame(root).pack(pady=5)
+
     song_label = Label(root, text='No song loaded', font='Helvetica 11 bold')
     song_label.pack()
 
@@ -227,7 +228,17 @@ if __name__ == '__main__':
     timer = Timer(f0)
     timer.song = song
 
-    play_list = PlayList(f1, folder)
+    play_list = PlayList(f1)
+
+    load_img = PhotoImage(file='icons/load.gif')
+    load_btn = Button(root, image=load_img, text='load', command=play_list.load)
+    load_btn.pack()
+    load_btn.place(x=0, y=0)
+
+    reset_img = PhotoImage(file='icons/reset.gif')
+    reset_btn = Button(root, image=reset_img, text='load', command=play_list.cancel_marking)
+    reset_btn.pack()
+    reset_btn.place(x=50, y=0)
 
     def play():
         stop()
@@ -253,13 +264,13 @@ if __name__ == '__main__':
         root.quit()
 
     buttons = [
-    ('play', play), 
-    ('stop', stop), 
-    ('pause', pause)
+    ('play', play, PhotoImage(file='icons/play.gif')), 
+    ('stop', stop, PhotoImage(file='icons/stop.gif')), 
+    ('pause', pause, PhotoImage(file='icons/pause.gif'))
     ]
 
     for button in buttons:
-        Button(f0, text=button[0], command=button[1], height=3, width=5).pack(side='left', padx=5)
+        Button(f0, image=button[2], text=button[0], command=button[1]).pack(side='left', padx=10)
 
     # Button(f0, text='play', command=play, height=3, width=5).pack(side='left')
     # Button(f0, text='stop', command=stop, height=5, width=5).pack(side='left')
@@ -267,4 +278,5 @@ if __name__ == '__main__':
 
     root.protocol("WM_DELETE_WINDOW", on_quit)
 
+    Label(root, text=u'©Vasily Nesterov').pack(side=RIGHT)
     root.mainloop()
