@@ -60,6 +60,13 @@ if __name__ == '__main__':
             except IndexError:
                 return None
 
+        def set_as_played(self):
+            self.__lb.itemconfig(int(self.__lb.curselection()[0]), {'fg': '#e6e6e6'})
+
+        def cancel_marking(self):
+            i = len()
+            while
+
 
     class Timer(Label):
 
@@ -195,6 +202,15 @@ if __name__ == '__main__':
 
             self.song.pause()
 
+        @property
+        def is_limited(self):
+
+            try:
+                self.limit.get()
+                return True
+
+            except ValueError:
+                return False
 
     Frame(root).pack(pady=5)
     song_label = Label(root, text='No song loaded', font='Helvetica 11 bold')
@@ -222,6 +238,9 @@ if __name__ == '__main__':
             song.load(filename)
             song_label.config(text=play_list.selected)
             timer.start()
+
+            if timer.is_limited:
+                play_list.set_as_played()
 
     def stop():
         timer.stop()
