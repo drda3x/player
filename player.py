@@ -56,7 +56,7 @@ if __name__ == '__main__':
         @property
         def selected(self):
             try:
-                return self.songs_list[int(self.__lb.curselection()[0])]
+                return self.songs_list[int(self.__lb.curselection()[0])][-1]
             except IndexError:
                 return None
 

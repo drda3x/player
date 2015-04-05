@@ -154,10 +154,10 @@ class SoundManager(object):
         def get_new_fade_out_action():
 
             normal_volume_level = 65535
-            duration = 4
+            duration = 5
             step = 200
             to_ms = lambda x: x * 1000
-            dec = normal_volume_level / (to_ms(duration) / step)
+            dec = normal_volume_level / (to_ms(duration) / step) + 2800
 
             if self.sound:
                 self.sound.volume(normal_volume_level)
