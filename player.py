@@ -5,16 +5,16 @@
 
 import os, sys, re
 from Tkinter import *
-from tkFileDialog  import askdirectory 
+from tkFileDialog import askdirectory
 from Sound import SoundManager as Sound
+from settings import get_music_dir, set_music_dir
 
 # =================================================
 
 last_opened_dir = None
 
 try:
-    from settings import MUSIC_DIR
-    last_opened_dir = MUSIC_DIR
+    last_opened_dir = get_music_dir()
 
 except Exception:
     pass
@@ -40,19 +40,7 @@ if __name__ == '__main__':
 
             folder = askdirectory()
 
-            settings_file = file('settings.py', 'r')
-            config = settings_file.read()
-            settings_file.close()
-
-            settings_file = file('settings.py', 'w')
-            if re.search('MUSIC_DIR = u\'.*\'$', config):
-                new_config = re.sub('MUSIC_DIR = u\'.*\'$', 'MUSIC_DIR = u\'%s\'' % folder, config)
-                settings_file.write(new_config)
-
-            else:
-                settings_file.write('MUSIC_DIR = u\'%s\'' % folder)
-
-            settings_file.close()
+            set_music_dir(folder)
 
             if folder:
                 self.load(folder)
