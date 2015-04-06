@@ -1,3 +1,4 @@
-# -*- coding:utf-8 -*-
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
 
-MUSIC_DIR = u'D:\\Da3x\\Music\\hastle'
+MUSIC_DIR = u'D:/Da3x/Music/hastle'
