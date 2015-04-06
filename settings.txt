@@ -1,1 +1,1 @@
-MUSIC_DIR = D:/Music/Хастл
+MUSIC_DIR = D:/Music/Белфаст/2006 - Пиво на асфальте

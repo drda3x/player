@@ -11,11 +11,11 @@ from settings import get_music_dir, set_music_dir
 
 # =================================================
 
-# try:
-last_opened_dir = get_music_dir()
+try:
+    last_opened_dir = get_music_dir()
 
-# except Exception:
-#     last_opened_dir = None
+except Exception:
+    last_opened_dir = None
 
 # =================================================
 
