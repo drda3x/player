@@ -38,9 +38,7 @@ if __name__ == '__main__':
 
         def load_by_user(self):
 
-            initial_dir = '%s\\' % __file__.split('/')[0] if sys.platform == 'win32' else os.path.abspath(__file__)
-
-            folder = askdirectory(initialdir=initial_dir)
+            folder = askdirectory()
 
             settings_file = file('settings.py', 'r')
             config = settings_file.read()
@@ -52,7 +50,6 @@ if __name__ == '__main__':
                 settings_file.write(new_config)
 
             else:
-                print '\\'.join(('MUSIC_DIR = u\'%s\'' % folder).split('/'))
                 settings_file.write('MUSIC_DIR = u\'%s\'' % folder)
 
             settings_file.close()
