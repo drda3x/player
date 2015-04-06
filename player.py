@@ -40,9 +40,8 @@ if __name__ == '__main__':
 
             folder = askdirectory()
 
-            set_music_dir(folder)
-
             if folder:
+                set_music_dir(folder)
                 self.load(folder)
 
         def load(self, folder):
