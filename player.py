@@ -8,6 +8,19 @@ from Tkinter import *
 from tkFileDialog  import askdirectory 
 from Sound import SoundManager as Sound
 
+# =================================================
+
+last_opened_dir = None
+
+try:
+    from settings import MUSIC_DIR
+    last_opened_dir = MUSIC_DIR
+
+except Exception:
+    pass
+
+# =================================================
+
 
 if __name__ == '__main__':
 
@@ -23,29 +36,33 @@ if __name__ == '__main__':
             self.__scroll_bar.pack(side=RIGHT, fill=Y)
             self.__lb.pack(side=LEFT, fill=BOTH, expand=1)
 
-        def load(self):
+        def load_by_user(self):
 
             folder = askdirectory()
 
             if folder:
-                self.__lb.delete(0, END)
-                self.dir = folder
+                self.load(folder)
 
-                num = re.compile('^\d{2,3}')
-                def bpm(file_name):
-                    _bpm = num.search(file_name)
-                    return int(file_name[0:_bpm.end()]) if _bpm else 0
+        def load(self, folder):
 
-                self.songs_list = [(bpm(elem), elem) for elem in filter(lambda x: x.endswith('.mp3'), os.listdir(self.dir))]
+            self.__lb.delete(0, END)
+            self.dir = folder
 
-                if len(self.songs_list) > 0:
-                    try:
-                        self.songs_list.sort(key=lambda x: x[0])
-                    except Exception:
-                        pass
+            num = re.compile('^\d{2,3}')
+            def bpm(file_name):
+                _bpm = num.search(file_name)
+                return int(file_name[0:_bpm.end()]) if _bpm else 0
 
-                    for song in self.songs_list:
-                        self.__lb.insert(END, song[1])
+            self.songs_list = [(bpm(elem), elem) for elem in filter(lambda x: x.endswith('.mp3'), os.listdir(self.dir))]
+
+            if len(self.songs_list) > 0:
+                try:
+                    self.songs_list.sort(key=lambda x: x[0])
+                except Exception:
+                    pass
+
+                for song in self.songs_list:
+                    self.__lb.insert(END, song[1])
 
         @property
         def selected(self):
@@ -230,8 +247,11 @@ if __name__ == '__main__':
 
     play_list = PlayList(f1)
 
+    if last_opened_dir:
+        play_list.load(last_opened_dir)
+
     load_img = PhotoImage(file='icons/load.gif')
-    load_btn = Button(root, image=load_img, text='load', command=play_list.load)
+    load_btn = Button(root, image=load_img, text='load', command=play_list.load_by_user)
     load_btn.pack()
     load_btn.place(x=0, y=0)
 
