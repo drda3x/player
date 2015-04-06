@@ -306,7 +306,7 @@ class SoundManager(object):
         Уничтожение всех потоков при закрытии
         """
         try:
-            self.__sound_stream.terminate() if self.__sound_stream else None
+            self.__sound_stream._Thread__stop() if self.__sound_stream else None
 
         except AttributeError:
             pass
