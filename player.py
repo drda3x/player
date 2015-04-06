@@ -47,21 +47,25 @@ if __name__ == '__main__':
             self.__lb.delete(0, END)
             self.dir = folder
 
-            num = re.compile('^\d{2,3}')
-            def bpm(file_name):
-                _bpm = num.search(file_name)
-                return int(file_name[0:_bpm.end()]) if _bpm else 0
+            try:
+                num = re.compile('^\d{2,3}')
+                def bpm(file_name):
+                    _bpm = num.search(file_name)
+                    return int(file_name[0:_bpm.end()]) if _bpm else 0
 
-            self.songs_list = [(bpm(elem), elem) for elem in filter(lambda x: x.endswith('.mp3'), os.listdir(self.dir))]
+                self.songs_list = [(bpm(elem), elem) for elem in filter(lambda x: x.endswith('.mp3'), os.listdir(self.dir))]
 
-            if len(self.songs_list) > 0:
-                try:
-                    self.songs_list.sort(key=lambda x: x[0])
-                except Exception:
-                    pass
+                if len(self.songs_list) > 0:
+                    try:
+                        self.songs_list.sort(key=lambda x: x[0])
+                    except Exception:
+                        pass
 
-                for song in self.songs_list:
-                    self.__lb.insert(END, song[1])
+                    for song in self.songs_list:
+                        self.__lb.insert(END, song[1])
+
+            except WindowsError:
+                pass
 
         @property
         def selected(self):
