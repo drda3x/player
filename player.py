@@ -11,13 +11,11 @@ from settings import get_music_dir, set_music_dir
 
 # =================================================
 
-last_opened_dir = None
+# try:
+last_opened_dir = get_music_dir()
 
-try:
-    last_opened_dir = get_music_dir()
-
-except Exception:
-    pass
+# except Exception:
+#     last_opened_dir = None
 
 # =================================================
 
@@ -38,7 +36,7 @@ if __name__ == '__main__':
 
         def load_by_user(self):
 
-            folder = askdirectory()
+            folder = u'' + askdirectory()
 
             if folder:
                 set_music_dir(folder)
