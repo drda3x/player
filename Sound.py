@@ -1,14 +1,14 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import time
+import time, os, sys
 import pymedia.muxer as muxer
 import pymedia.audio.acodec as acodec
 import pymedia.audio.sound as sound
 
-from multiprocessing import Process, Queue
-
 from mutagen.mp3 import MP3
+from threading import Thread
+from Queue import Queue
 
 
 class Sound(object):
@@ -144,7 +144,8 @@ class SoundManager(object):
     PAUSE_STATUS = 'pause'
 
     def __init__(self):
-        self.__sound_stream = Process(target=self.manager, args=(self.__connection,))
+
+        self.__sound_stream = Thread(target=self.manager, args=(self.__connection,))
 
     def manager(self, request):
         u"""

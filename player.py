@@ -276,7 +276,7 @@ if __name__ == '__main__':
     # Button(f0, text='stop', command=stop, height=5, width=5).pack(side='left')
     # Button(f0, text='pause', command=pause, height=5, width=5).pack(side='left')
 
-    root.protocol("WM_DELETE_WINDOW", on_quit)
+    # root.protocol("WM_DELETE_WINDOW", on_quit)
 
-    Label(root, text=u'©Vasily Nesterov').pack(side=RIGHT)
+    Label(root, text=u'© Vasily Nesterov').pack(side=RIGHT)
     root.mainloop()
