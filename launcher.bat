@@ -1,0 +1,1 @@
+python c:/freelance/player/player.py

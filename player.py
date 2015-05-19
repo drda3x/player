@@ -23,9 +23,15 @@ except Exception:
 if __name__ == '__main__':
 
     root = Tk()
+
+    # Это тоже в draw_frame
     root.title('My super player')
 
     class PlayList():
+
+        GRAY = '#e6e6e6'
+
+        BLACK = '#000000'
 
         def __init__(self, frame):
             self.__scroll_bar = Scrollbar(frame, orient=VERTICAL)
@@ -78,16 +84,16 @@ if __name__ == '__main__':
             self.__lb.itemconfig(index, {'fg': color})
 
         def set_as_played(self):
-            self.__mark_elem(int(self.__lb.curselection()[0]), '#e6e6e6')
+            self.__mark_elem(int(self.__lb.curselection()[0]), self.GRAY)
 
         def cancel_marking(self):
             i = self.__lb.size() - 1
 
             while i >= 0:
-                self.__mark_elem(i, '#000000')
+                self.__mark_elem(i, self.BLACK)
                 i -= 1
 
-
+    # todo по хорошему этот таймер не должен управлять песней
     class Timer(Label):
 
         limit = IntVar()
@@ -237,6 +243,7 @@ if __name__ == '__main__':
     song_label = Label(root, text='No song loaded', font='Helvetica 11 bold')
     song_label.pack()
 
+    # todo этот участок можно перевести в метод draw_frame в классе
     f0 = Frame(root)
     f1 = Frame(root)
     f3 = Frame(f0)
@@ -253,6 +260,7 @@ if __name__ == '__main__':
     if last_opened_dir:
         play_list.load(last_opened_dir)
 
+    # todo это можно перенести в imgs-массив
     load_img = PhotoImage(file='icons/load.gif')
     load_btn = Button(root, image=load_img, text='load', command=play_list.load_by_user)
     load_btn.pack()
@@ -263,6 +271,7 @@ if __name__ == '__main__':
     reset_btn.pack()
     reset_btn.place(x=50, y=0)
 
+    # Ну это - методы класса
     def play():
         stop()
         filename = play_list.dir + '\\' + play_list.selected if play_list.selected else None
@@ -287,19 +296,18 @@ if __name__ == '__main__':
         root.quit()
 
     buttons = [
-    ('play', play, PhotoImage(file='icons/play.gif')), 
-    ('stop', stop, PhotoImage(file='icons/stop.gif')), 
-    ('pause', pause, PhotoImage(file='icons/pause.gif'))
+        ('play', play, PhotoImage(file='icons/play.gif')), 
+        ('stop', stop, PhotoImage(file='icons/stop.gif')), 
+        ('pause', pause, PhotoImage(file='icons/pause.gif'))
     ]
 
     for button in buttons:
         Button(f0, image=button[2], text=button[0], command=button[1]).pack(side='left', padx=10)
 
-    # Button(f0, text='play', command=play, height=3, width=5).pack(side='left')
-    # Button(f0, text='stop', command=stop, height=5, width=5).pack(side='left')
-    # Button(f0, text='pause', command=pause, height=5, width=5).pack(side='left')
-
     root.protocol("WM_DELETE_WINDOW", on_quit)
 
+    # todo это тоже можно перенести в draw_frame
     Label(root, text=u'© Vasily Nesterov').pack(side=RIGHT)
+
+    # А тут и так все понятно
     root.mainloop()
